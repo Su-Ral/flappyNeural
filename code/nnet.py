@@ -1,5 +1,7 @@
 import numpy as np
 import scipy.special
+import random
+from defs import *
 
 class Nnet:
 
@@ -13,31 +15,50 @@ class Nnet:
 
     def get_outputs(self, inputs_list):
         inputs = np.array(inputs_list, ndmin=2).T
-        print('inputs',inputs, sep = '\n')
+       
         hidden_inputs = np.dot(self.weight_input_hidden,inputs)
-        print('hidden inputs',hidden_inputs, sep = '\n')
+       
         hidden_outputs = self.activation_function(hidden_inputs)
-        print('hidden outputs',hidden_outputs, sep = '\n')
+ 
         final_inputs = np.dot(self.weight_hidden_output,hidden_outputs)
-        print('final outputs',final_inputs, sep = '\n')
+      
         final_outputs = self.activation_function(final_inputs)
-        print('final output',final_outputs, sep = '\n')
+    
         return final_outputs
 
     def get_max_value(self, inputs_list):
         outputs = self.get_outputs(inputs_list)
         return np.max(outputs)
     
-def test():
-   
-    nnet= Nnet(2,5,1)
-    print('hidden inputs',nnet.weight_input_hidden, sep = '\n')
-    print('hidden output',nnet.weight_hidden_output, sep = '\n')
-    inputs = [0.2,0.6]
-    output = nnet.get_max_value(inputs)    
-    print('output', output ,sep='\n')
-   
+    def modify_weights(self):
+        Nnet.modify_array(self.weight_input_hidden)
+        Nnet.modify_array(self.weight_hidden_output)
     
+    def create_mixed_weights(self,nnet1,nnet2):
+        self.weight_input_hidden = Nnet.get_mix_from_arrays(nnet1.weight_input_hidden, nnet2.weight_input_hidden)
+        self.weight_hidden_output = Nnet.get_mix_from_arrays(nnet1.weight_hidden_output, nnet2.weight_hidden_output)
+    
+    def modify_array(a):
+        for x in np.nditer(a,op_flags=['readwrite']):
+            if random.random() < MUTATION_WEIGHT_MODIFY_CHANCE: 
+                x[...] = np.random.random_sample() - 0.5
 
-if __name__ == "__main__":
-    test()
+    def get_mix_from_arrays(ar1,ar2):
+        total_entries = ar1.size
+        num_rows = ar1.shape[0]
+        num_cols = ar1.shape[1]
+
+        num_to_take = total_entries - int(total_entries* MUTATION_ARRAU_MIX_PERC)
+        idx = np.random.choice(np.arange(total_entries), num_to_take, replace= False)
+        res = np.random.rand(num_rows,num_cols)
+
+        for row in range(0,num_rows):
+            for col in range(0,num_cols):
+                index = row * num_cols + col
+                if index in idx:
+                    res[row][col] = ar1[row][col]
+                else:
+                    res[row][col] = ar2[row][col]
+        return res
+
+
